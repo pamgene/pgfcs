@@ -28,7 +28,7 @@ fcs = function(dataMatrix, classMatrix, phenoGrp, statFun = stat.snr, phenoPerms
 	aFcsResult = data.frame(aFcsResult, combinedScore = combinedScore)
   return(aFcsResult)
 }
-
+#' @export
 psea = function(dataMatrix, classMatrix, phenoGrp, statFun = stat.snr, phenoPerms = TRUE, featurePerms = TRUE, nPerms = DFT.PERMS){
   upStats = pseStats(dataMatrix, classMatrix, phenoGrp, statFun)
   nClass = apply(classMatrix > 0 ,2, sum)
@@ -53,13 +53,14 @@ psea = function(dataMatrix, classMatrix, phenoGrp, statFun = stat.snr, phenoPerm
   aPseaResult = data.frame(aPseaResult, combinedScore = combinedScore)
   return(aPseaResult)
 }
-
-stat.identity = function(M, grp){
+#' @export
+stat.identity = function(X, grp){
   # return M as a columns vector, ignore grp
   # this is intended for the case that the dataMatrix is in fact a column vector with stats.
-  return(as.vector(M))
+  M = matrix(nrow = length(X), ncol = 1, data = X)
+  return(M)
 }
-
+#' @export
 stat.snr = function(M, grp){
 	# snr statistic per peptide
 	bGrp1 = grp == levels(grp)[1]
@@ -73,7 +74,7 @@ stat.snr = function(M, grp){
 	aStat[is.nan(aStat)] = 0
 	return(aStat)
 }
-
+#' @export
 stat.delta = function(M, grp){
 	# difference statistic per peptide
 	Mgrp1 = as.matrix(M[grp == levels(grp)[1],])
@@ -158,15 +159,21 @@ pseaPhenoPerms = function(dataMatrix, classMatrix, grp, statFun, nPerms = DFT.PE
   return(pStat)
 }
 
-fcsSpotPerms = function(dataMatrix, classMatrix, grp, statFun, nPerms = DFT.PERMS){
-	spotPerms = mkPerms(1:dim(dataMatrix)[2], nPerms)
-	nPerms = dim(spotPerms)[2]
-	pStat = matrix(nrow = dim(classMatrix)[2], ncol = nPerms)
-	for (i in 1:nPerms){
-		pMatrix  = dataMatrix[, spotPerms[,i]]
-		pStat[,i] = setStats(pMatrix, classMatrix, grp, statFun)
-	}
-	return(pStat)
+fcsSpotPerms = function(X, classMatrix, grp, statFun, nPerms = DFT.PERMS){
+  if(is.matrix(X)){
+    dataMatrix = X
+  } else {
+    dataMatrix = matrix(nrow = 1, ncol = length(X), data = X)
+  }
+  
+  spotPerms = mkPerms(1:dim(dataMatrix)[2], nPerms)
+  nPerms = dim(spotPerms)[2]
+  pStat = matrix(nrow = dim(classMatrix)[2], ncol = nPerms)
+  for (i in 1:nPerms){
+    pMatrix  = dataMatrix[, spotPerms[,i]]
+    pStat[,i] = setStats(pMatrix, classMatrix, grp, statFun)
+  }
+  return(pStat)
 }
 
 pseaSpotPerms = function(dataMatrix, classMatrix, grp, statFun, nPerms = DFT.PERMS){
