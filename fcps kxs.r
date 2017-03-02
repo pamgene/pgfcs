@@ -366,6 +366,7 @@ showResults <- function(properties=properties, folder=folder){
                                        colours = c("black", "white", "red"), 
                                        values = c(0,0.65, 1),
                                        breaks = c(0,0.65, 1),
+									   limits = c(0,1),
                                        labels = c(0,0.65, 1)*2)
 									   
 	sp = sp + xlab("Kinase Top List") + ylab("Normalized kinase statistic")
@@ -378,6 +379,7 @@ showResults <- function(properties=properties, folder=folder){
                                        colours = c("black", "white", "red"), 
                                        values = c(0,0.65, 1),
                                        breaks = c(0,0.65, 1),
+									   limits = c(0,1),
                                        labels = c(0,0.65, 1)*2)
 	kv = kv + theme(panel.background = element_rect(fill = 'lightblue', colour = 'black'))
 	kv = kv + geom_text() + scale_size(range = c(3, 10)) + xlab("Normalized kinase statistic") + ylab("Overall score")
@@ -537,3 +539,5 @@ rcount = function(aFrame, scores, clip = 20){
   aResult = data.frame(rank = as.numeric(names(rankSummary)), count = rankSummary, finalScore = combScore)
   return(aResult)
 }
+
+
