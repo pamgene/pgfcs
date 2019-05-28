@@ -1,5 +1,7 @@
 #' @import corpcor
 #' @import combinat
+#' @import dplyr
+#' @import reshape2
 
 DFT.PERMS = 500
 
@@ -8,13 +10,11 @@ fcs = function(dataMatrix, classMatrix, phenoGrp, statFun = stat.snr, phenoPerms
 	upStats = setStats(dataMatrix, classMatrix, phenoGrp, statFun)
 	nClass = apply(classMatrix > 0 ,2, sum)
 	aFcsResult = data.frame(ClassName = colnames(classMatrix), nFeatures = nClass, SetStat = upStats, NormalizedSetStat = upStats/nClass)
-	#print(phenoScoreFun)
 	if(phenoPerms){
 		aPhenoScore = pScore(dataMatrix, classMatrix, phenoGrp, upStats, permFun = fcsPhenoPerms, statFun = statFun, nPerms = nPerms)
 	} else {
 		aPhenoScore = NaN
 	}
-	#print(featureScoreFun)
 	if(featurePerms){
 		aFeatureScore = pScore(dataMatrix, classMatrix, phenoGrp, upStats, permFun = fcsSpotPerms, statFun = statFun, nPerms = nPerms)
 	} else {
@@ -54,14 +54,23 @@ psea = function(dataMatrix, classMatrix, phenoGrp, statFun = stat.snr, phenoPerm
   return(aPseaResult)
 }
 #' @export
-stat.identity = function(X, grp){
+stat.identity = function(X, grp = NULL, pair = NULL){
   # return M as a columns vector, ignore grp
   # this is intended for the case that the dataMatrix is in fact a column vector with stats.
   M = matrix(nrow = length(X), ncol = 1, data = X)
   return(M)
 }
+
 #' @export
-stat.snr = function(M, grp){
+signOfStat = function(grp){
+  # Note: nor for stat.identity
+  s = c(-1,1)
+  names(s) = levels(grp)
+  return(s)
+}
+
+#' @export
+stat.snr = function(M, grp, pair = NULL){
 	# snr statistic per peptide
 	bGrp1 = grp == levels(grp)[1]
 	bGrp2 = grp == levels(grp)[2]
@@ -75,7 +84,7 @@ stat.snr = function(M, grp){
 	return(aStat)
 }
 #' @export
-stat.delta = function(M, grp){
+stat.delta = function(M, grp, pair = NULL){
 	# difference statistic per peptide
 	Mgrp1 = as.matrix(M[grp == levels(grp)[1],])
 	Mgrp2 = as.matrix(M[grp == levels(grp)[2],])
@@ -91,6 +100,25 @@ stat.delta = function(M, grp){
 	}
 	aStat = m2-m1
 	return(aStat)
+}
+
+#' @export
+stat.onesample = function(M, grp = NULL, pair = NULL){
+  m0 = apply(M, 2, mean)
+  s0 = apply(M, 2, sd)
+  aStat = m0/s0
+  aStat[s0 == 0]  = 0
+  return(aStat)
+}
+
+#' @export
+stat.paired = function(M, grp, pair){
+  d = data.frame(X, grp, pair)
+  dm = melt(d, id.vars = c("grp", "pair"))
+  Mp = acast(dm,pair ~ variable ~ grp)
+  if (dim(Mp)[3]!= 2) stop("Improper pairing")
+  return(stat.onesample(Mp[,,2]-Mp[,,1]))
+
 }
 
 mvCorrelationScore = function(dataMatrix, classMatrix, phenoGrp, centerData = TRUE, scaleData = FALSE){
@@ -165,7 +193,7 @@ fcsSpotPerms = function(X, classMatrix, grp, statFun, nPerms = DFT.PERMS){
   } else {
     dataMatrix = matrix(nrow = 1, ncol = length(X), data = X)
   }
-  
+
   spotPerms = mkPerms(1:dim(dataMatrix)[2], nPerms)
   nPerms = dim(spotPerms)[2]
   pStat = matrix(nrow = dim(classMatrix)[2], ncol = nPerms)

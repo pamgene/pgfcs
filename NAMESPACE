@@ -2,8 +2,13 @@
 
 export(fcs)
 export(psea)
+export(signOfStat)
 export(stat.delta)
 export(stat.identity)
+export(stat.onesample)
+export(stat.paired)
 export(stat.snr)
 import(combinat)
 import(corpcor)
+import(dplyr)
+import(reshape2)
