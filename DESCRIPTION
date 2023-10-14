@@ -1,7 +1,7 @@
 Package: pgFCS
 Type: Package
 Title: Functional Class Scoring
-Version: 1.3
+Version: 1.4
 Date: 2023-10-04
 Author: Rik de Wijn
 Maintainer: Rik de Wijn <rdwijn@pamgene.com>

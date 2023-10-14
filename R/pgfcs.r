@@ -7,25 +7,27 @@ DFT.PERMS = 500
 
 #' @export
 fcs = function(dataMatrix, classMatrix, phenoGrp, statFun = stat.snr, phenoPerms = TRUE, featurePerms = TRUE, nPerms = DFT.PERMS){
-	upStats = setStats(dataMatrix, classMatrix, phenoGrp, statFun)
-	nClass = apply(classMatrix > 0 ,2, sum)
-	aFcsResult = data.frame(ClassName = colnames(classMatrix), nFeatures = nClass, SetStat = upStats, NormalizedSetStat = upStats/nClass)
-	if(phenoPerms){
-		aPhenoScore = pScore(dataMatrix, classMatrix, phenoGrp, upStats, permFun = fcsPhenoPerms, statFun = statFun, nPerms = nPerms)
-	} else {
-		aPhenoScore = NaN
-	}
-	if(featurePerms){
-		aFeatureScore = pScore(dataMatrix, classMatrix, phenoGrp, upStats, permFun = fcsSpotPerms, statFun = statFun, nPerms = nPerms)
-	} else {
-		aFeatureScore = NaN
-	}
-	aFcsResult = data.frame(aFcsResult, phenoScore = aPhenoScore,
-										featureScore = aFeatureScore,
-										pPhenoScore = -log10(aPhenoScore),
-										pFeatureScore = -log10(aFeatureScore) )
-	combinedScore = apply(as.matrix(aFcsResult[, c("pPhenoScore", "pFeatureScore")]),1,sum, na.rm = TRUE)
-	aFcsResult = data.frame(aFcsResult, combinedScore = combinedScore)
+  upStats = setStats(dataMatrix, classMatrix, phenoGrp, statFun)
+  nClass = apply(classMatrix > 0 ,2, sum)
+  aFcsResult = data.frame(ClassName = colnames(classMatrix), nFeatures = nClass, SetStat = upStats, NormalizedSetStat = upStats/nClass)
+  if(phenoPerms){
+    aPhenoScore = pScore(dataMatrix, classMatrix, phenoGrp, upStats, permFun = fcsPhenoPerms, statFun = statFun, nPerms = nPerms)
+  } else {
+    aPhenoScore = NaN
+  }
+  if(featurePerms){
+    aFeatureScore = pScore(dataMatrix, classMatrix, phenoGrp, upStats, permFun = fcsSpotPerms, statFun = statFun, nPerms = nPerms)
+  } else {
+    aFeatureScore = NaN
+  }
+  aFcsResult = data.frame(aFcsResult,
+                          phenoScore = aPhenoScore,
+                          featureScore = aFeatureScore,
+                          pPhenoScore = -log10(aPhenoScore),
+                          pFeatureScore = -log10(aFeatureScore) )
+  combinedScore = apply(as.matrix(aFcsResult[, c("pPhenoScore", "pFeatureScore")]),1,sum, na.rm = TRUE)
+  delta = setStats(dataMatrix, classMatrix, phenoGrp, statFun = stat.delta)
+  aFcsResult = data.frame(aFcsResult, combinedScore = combinedScore, delta = delta)
   return(aFcsResult)
 }
 #' @export
@@ -45,9 +47,9 @@ psea = function(dataMatrix, classMatrix, phenoGrp, statFun = stat.snr, phenoPerm
     aFeatureScore = NaN
   }
   aPseaResult = data.frame(aPseaResult, phenoScore = aPhenoScore,
-                          featureScore = aFeatureScore,
-                          pPhenoScore = -log10(aPhenoScore),
-                          pFeatureScore = -log10(aFeatureScore))
+                           featureScore = aFeatureScore,
+                           pPhenoScore = -log10(aPhenoScore),
+                           pFeatureScore = -log10(aFeatureScore))
 
   combinedScore = apply(as.matrix(aPseaResult[, c("pPhenoScore", "pFeatureScore")]),1,sum, na.rm = TRUE)
   aPseaResult = data.frame(aPseaResult, combinedScore = combinedScore)
@@ -71,35 +73,35 @@ signOfStat = function(grp){
 
 #' @export
 stat.snr = function(M, grp, pair = NULL){
-	# snr statistic per peptide
-	bGrp1 = grp == levels(grp)[1]
-	bGrp2 = grp == levels(grp)[2]
-	m1 = apply(M[bGrp1,], 2, mean)
-	s1 = apply(M[bGrp1,], 2, var)
-	m2 = apply(M[bGrp2,], 2, mean)
-	s2 = apply(M[bGrp2,], 2, var)
-	aStat = (m2 - m1) / sqrt(s1+s2)
-	# mask any constant columns by 0
-	aStat[is.nan(aStat)] = 0
-	return(aStat)
+  # snr statistic per peptide
+  bGrp1 = grp == levels(grp)[1]
+  bGrp2 = grp == levels(grp)[2]
+  m1 = apply(M[bGrp1,], 2, mean)
+  s1 = apply(M[bGrp1,], 2, var)
+  m2 = apply(M[bGrp2,], 2, mean)
+  s2 = apply(M[bGrp2,], 2, var)
+  aStat = (m2 - m1) / sqrt(s1+s2)
+  # mask any constant columns by 0
+  aStat[is.nan(aStat)] = 0
+  return(aStat)
 }
 #' @export
 stat.delta = function(M, grp, pair = NULL){
-	# difference statistic per peptide
-	Mgrp1 = as.matrix(M[grp == levels(grp)[1],])
-	Mgrp2 = as.matrix(M[grp == levels(grp)[2],])
-	if(dim(Mgrp1)[2] > 1){
-		m1 = apply(Mgrp1, 2, mean)
-	} else {
-		m1 = Mgrp1
-	}
-	if (dim(Mgrp2)[2] > 1){
-		m2 = apply(Mgrp2, 2, mean)
-	} else {
-		m2 = Mgrp2
-	}
-	aStat = m2-m1
-	return(aStat)
+  # difference statistic per peptide
+  Mgrp1 = as.matrix(M[grp == levels(grp)[1],])
+  Mgrp2 = as.matrix(M[grp == levels(grp)[2],])
+  if(dim(Mgrp1)[2] > 1){
+    m1 = apply(Mgrp1, 2, mean)
+  } else {
+    m1 = Mgrp1
+  }
+  if (dim(Mgrp2)[2] > 1){
+    m2 = apply(Mgrp2, 2, mean)
+  } else {
+    m2 = Mgrp2
+  }
+  aStat = m2-m1
+  return(aStat)
 }
 
 #' @export
@@ -122,18 +124,18 @@ stat.paired = function(M, grp, pair){
 }
 
 mvCorrelationScore = function(dataMatrix, classMatrix, phenoGrp, centerData = TRUE, scaleData = FALSE){
-	X0 = scale(dataMatrix, center = centerData, scale = scaleData)
-	Xp = X0 %*% classMatrix
-	y = matrix(nrow = length(phenoGrp), ncol = 1, data = as.numeric(phenoGrp))
-	r = cor(y, Xp)
-	mr = r %*% corpcor::invcor.shrink(Xp) %*% t(r)
-	return(mr)
+  X0 = scale(dataMatrix, center = centerData, scale = scaleData)
+  Xp = X0 %*% classMatrix
+  y = matrix(nrow = length(phenoGrp), ncol = 1, data = as.numeric(phenoGrp))
+  r = cor(y, Xp)
+  mr = r %*% corpcor::invcor.shrink(Xp) %*% t(r)
+  return(mr)
 }
 
 setStats = function(M, classMat, grp, statfun){
-	# statistic per set
-	setStat = t(classMat) %*% statfun(M, grp)
-	return(setStat)
+  # statistic per set
+  setStat = t(classMat) %*% statfun(M, grp)
+  return(setStat)
 }
 
 pseStats = function(M, classMat, grp, statfun){
@@ -147,33 +149,33 @@ pseStats = function(M, classMat, grp, statfun){
 }
 
 pseSingleSet = function(class, stats, p = 1){
-    Nhit = abs(stats)^p %*% class
-    Nmiss = length(class)-sum(class > 0)
-    hit  = cumsum( (class* abs(stats)^p)/Nhit)
-    miss = cumsum( (!(class > 0))/Nmiss)
-    ES = max(abs(hit-miss))
-    return(ES)
+  Nhit = abs(stats)^p %*% class
+  Nmiss = length(class)-sum(class > 0)
+  hit  = cumsum( (class* abs(stats)^p)/Nhit)
+  miss = cumsum( (!(class > 0))/Nmiss)
+  ES = max(abs(hit-miss))
+  return(ES)
 }
 
 pScore = function(dataMatrix, classMatrix, phenoGrp, upStat, permFun, statFun = stat.snr, nPerms = DFT.PERMS){
-	pSetStat = permFun(dataMatrix, classMatrix, grp = phenoGrp, statFun = statFun, nPerms = nPerms)
-	nPerms = dim(pSetStat)[2]
-	myScore = vector(length = length(upStat))
-	for (i in 1:length(upStat)){
-		myScore[i] = max(sum(abs(pSetStat[i,])>=abs(upStat[i]))/nPerms, 1/nPerms)
-	}
-	return(myScore)
+  pSetStat = permFun(dataMatrix, classMatrix, grp = phenoGrp, statFun = statFun, nPerms = nPerms)
+  nPerms = dim(pSetStat)[2]
+  myScore = vector(length = length(upStat))
+  for (i in 1:length(upStat)){
+    myScore[i] = max(sum(abs(pSetStat[i,])>=abs(upStat[i]))/nPerms, 1/nPerms)
+  }
+  return(myScore)
 }
 
 fcsPhenoPerms = function(dataMatrix, classMatrix, grp, statFun, nPerms = DFT.PERMS){
-	grpPerms = mkPerms(grp, nPerms)
-	nPerms = dim(grpPerms)[2]
-	pStat = matrix(nrow = dim(classMatrix)[2], ncol = nPerms)
-	for (i in 1:nPerms){
-		pGrp = grp[grpPerms[,i]]
-		pStat[,i] = setStats(dataMatrix, classMatrix, pGrp, statFun)
-	}
-	return(pStat)
+  grpPerms = mkPerms(grp, nPerms)
+  nPerms = dim(grpPerms)[2]
+  pStat = matrix(nrow = dim(classMatrix)[2], ncol = nPerms)
+  for (i in 1:nPerms){
+    pGrp = grp[grpPerms[,i]]
+    pStat[,i] = setStats(dataMatrix, classMatrix, pGrp, statFun)
+  }
+  return(pStat)
 }
 
 pseaPhenoPerms = function(dataMatrix, classMatrix, grp, statFun, nPerms = DFT.PERMS){
@@ -216,15 +218,15 @@ pseaSpotPerms = function(dataMatrix, classMatrix, grp, statFun, nPerms = DFT.PER
 }
 
 mkPerms = function(grp, maxPerms = DFT.PERMS){
-	if ( length(grp) < 7){
-		pIdx = permn(length(grp))
-		p = matrix(nrow = length(grp), ncol = length(pIdx), data = unlist(pIdx))
-		if (length(pIdx) > maxPerms){
-			p = p[, sample(1:maxPerms)]
-		}
-	} else {
-		mIdx = matrix(nrow = length(grp), ncol = maxPerms, data = 1:length(grp))
-		p = apply(mIdx, 2, sample)
-	}
-	return(p)
+  if ( length(grp) < 7){
+    pIdx = permn(length(grp))
+    p = matrix(nrow = length(grp), ncol = length(pIdx), data = unlist(pIdx))
+    if (length(pIdx) > maxPerms){
+      p = p[, sample(1:maxPerms)]
+    }
+  } else {
+    mIdx = matrix(nrow = length(grp), ncol = maxPerms, data = 1:length(grp))
+    p = apply(mIdx, 2, sample)
+  }
+  return(p)
 }
