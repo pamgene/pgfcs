@@ -27,7 +27,7 @@ fcs = function(dataMatrix, classMatrix, phenoGrp, statFun = stat.snr, phenoPerms
                           pFeatureScore = -log10(aFeatureScore) )
   combinedScore = apply(as.matrix(aFcsResult[, c("pPhenoScore", "pFeatureScore")]),1,sum, na.rm = TRUE)
   delta = setStats(dataMatrix, classMatrix, phenoGrp, statfun = stat.delta)
-  aFcsResult = data.frame(aFcsResult, combinedScore = combinedScore, delta = delta)
+  aFcsResult = data.frame(aFcsResult, combinedScore = combinedScore, delta = delta/nClass)
   return(aFcsResult)
 }
 #' @export
