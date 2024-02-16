@@ -29,9 +29,10 @@ fcs = function(dataMatrix, classMatrix, phenoGrp, statFun = stat.snr, phenoPerms
   aFcsResult = data.frame(aFcsResult, combinedScore = combinedScore)
   if(phenoPerms){
     delta = setStats(dataMatrix, classMatrix, phenoGrp, statfun = stat.delta)
-    aFcsResult = data.frame(aFcsResult, delta = delta/nClass)
+  } else {
+    delta = NaN
   }
-  return(aFcsResult)
+  data.frame(aFcsResult, combinedScore = combinedScore, delta = delta/nClass)
 }
 #' @export
 psea = function(dataMatrix, classMatrix, phenoGrp, statFun = stat.snr, phenoPerms = TRUE, featurePerms = TRUE, nPerms = DFT.PERMS){
